@@ -1,0 +1,58 @@
+# parent POM 릴리스: main에 parent-pom/ 또는 quality/ 변경이 머지되면
+# parent-pom/pom.xml 버전으로 태그 vX.Y.Z를 만들고 GitHub Packages에 배포한다.
+# 이미 있는 버전이면 아무것도 하지 않는다. 버전을 올리려면 pom의 <version>과 <fourcut.common.version>을 함께 올린다.
+# (기본 GITHUB_TOKEN으로 만든 태그는 다른 워크플로를 깨우지 않으므로 태그와 배포를 한 잡에서 한다.)
+name: release
+
+on:
+  push:
+    branches: [main]
+    paths: ['parent-pom/**', 'quality/**', '.github/workflows/release.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      - name: Read version
+        id: v
+        working-directory: parent-pom
+        run: |
+          v=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          rules=$(mvn -B -q help:evaluate -Dexpression=fourcut.common.version -DforceStdout)
+          test "$v" = "$rules" || { echo "::error::<version> $v != <fourcut.common.version> $rules"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::v$v 태그가 이미 있음. 버전을 올리지 않았으므로 배포하지 않음"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Tag
+        if: steps.v.outputs.exists == 'false'
+        run: |
+          git tag "v${{ steps.v.outputs.version }}"
+          git push origin "v${{ steps.v.outputs.version }}"
+      - name: Deploy parent POM
+        if: steps.v.outputs.exists == 'false'
+        working-directory: parent-pom
+        run: mvn -B -ntp deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
