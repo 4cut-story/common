@@ -36,18 +36,14 @@ services:
     java_package: net.java21.fourcut.content   # groupId net.java21.fourcut, artifactId content-service
     local_url: http://localhost:8083
     config_key: SERVICES_CONTENT_URL
-  model-runtime:
-    port: 8001
+  model-runtime:            # GPU 워커. 클러스터에서 부르지 않는다 (pull, docs 아키텍처 8절)
     location: gpu-pc
-    prod_url: http://model-runtime:8001   # Service + 수동 Endpoints → GPU PC 고정 IP
-    local_url: http://localhost:8001      # 또는 가짜 런타임
-    config_key: SERVICES_MODEL_RUNTIME_URL
+    pulls_from: api-gateway   # /internal/gpu-jobs/** (conversation-service 워커 API)
+    config_keys: [GPU_WORKER_API_URL, GPU_WORKER_TOKEN, OLLAMA_URL]   # 워커 쪽 설정
   ollama:
     port: 11434
     location: gpu-pc
-    prod_url: http://ollama:11434
-    local_url: http://localhost:11434     # 또는 가짜
-    config_key: SERVICES_OLLAMA_URL       # Spring AI base-url
+    internal_url: http://ollama:11434   # GPU PC compose 안에서 워커만 호출
   postgresql:
     port: 5432
     location: existing-infra
