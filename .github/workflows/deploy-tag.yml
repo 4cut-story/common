@@ -1,0 +1,44 @@
+# deploy 레포 k8s/apps/<app-name>/kustomization.yaml의 이미지 태그를 현재 커밋 sha로 바꿔 커밋한다.
+# Argo CD ApplicationSet이 변경을 감지해 자동 동기화한다.
+name: deploy-tag
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        type: string
+        required: true
+    secrets:
+      DEPLOY_REPO_TOKEN:
+        description: 4cut-story/deploy Contents 쓰기 권한 토큰
+        required: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # 같은 서비스의 연속 push는 마지막 것만 반영한다.
+    concurrency:
+      group: deploy-tag-${{ github.repository }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/deploy
+          token: ${{ secrets.DEPLOY_REPO_TOKEN }}
+      - uses: imranismail/setup-kustomize@v2
+      # sed로 deployment.yaml을 고치지 않고 kustomization.yaml의 images 항목만 바꾼다.
+      - name: Set image tag
+        working-directory: k8s/apps/${{ inputs.app-name }}
+        run: kustomize edit set image "app=ghcr.io/${{ github.repository_owner }}/${{ inputs.app-name }}:${GITHUB_SHA}"
+      - name: Commit and push (retry on concurrent update)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/apps/${{ inputs.app-name }}/kustomization.yaml
+          git commit -m "chore(${{ inputs.app-name }}): image ${GITHUB_SHA::7}" || { echo "no change"; exit 0; }
+          for i in 1 2 3 4 5; do
+            git push && exit 0
+            echo "::warning::deploy push rejected, rebase and retry $i/5"
+            git pull --rebase
+          done
+          exit 1
