@@ -13,6 +13,10 @@ on:
         description: 서비스 이름 (= 레포 이름 = deploy/k8s/apps/<app-name>)
         type: string
         required: true
+    secrets:
+      DEPLOY_REPO_TOKEN:
+        description: deploy 레포 sync-images를 바로 실행할 토큰 (fine-grained, deploy 레포 Actions 쓰기). 없으면 10분 폴링으로 반영
+        required: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/${{ inputs.app-name }}
@@ -96,3 +100,21 @@ jobs:
           context: .
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}
+
+  # 이미지가 올라가면 deploy 레포 sync-images를 바로 깨워 이 서비스 태그를 갱신한다.
+  # 토큰이 없거나 실패해도 deploy 레포의 10분 폴링이 같은 일을 하므로 빌드는 실패시키지 않는다.
+  notify-deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.DEPLOY_REPO_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::DEPLOY_REPO_TOKEN 없음. deploy 레포 폴링(10분)으로 반영됨"
+            exit 0
+          fi
+          gh workflow run sync-images.yml -R "${{ github.repository_owner }}/deploy" \
+            -f app="${{ inputs.app-name }}" -f sha="${{ github.sha }}" \
+            || echo "::warning::sync-images 호출 실패. 폴링으로 반영됨"

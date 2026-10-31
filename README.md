@@ -24,16 +24,16 @@
 | web | `.github/workflows/node-service.yml` | ESLint(경고도 실패), `tsc --noEmit`, Prettier, jscpd(중복), Vitest 커버리지 80%, `next build` |
 | model-runtime | `.github/workflows/python-service.yml` | ruff check, ruff format, mypy, pytest-cov 80% |
 
-- PR과 main push 모두 검사한다. main push일 때만 GHCR에 `:<sha>` 이미지를 올린다. `deploy` 레포의 `sync-images.yml`이 10분마다(또는 수동 실행) 각 서비스의 마지막 성공 이미지를 찾아 `k8s/apps/<서비스>/kustomization.yaml` 태그를 자동 커밋하고, Argo CD가 자동 동기화한다. 코드(pom.xml·package.json·pyproject.toml)가 없는 레포는 `detect` 잡이 검사를 건너뛴다. (model-runtime은 GPU PC compose라 이미지만 만든다.)
+- PR과 main push 모두 검사한다. main push일 때만 GHCR에 `:<sha>` 이미지를 올린다. 이어서 `notify-deploy` 잡이 `deploy` 레포의 `sync-images.yml`을 바로 실행해 그 서비스 태그를 갱신한다. 토큰이 없거나 호출이 실패하면 `sync-images.yml`이 10분마다 각 서비스의 마지막 성공 이미지를 찾아 `k8s/apps/<서비스>/kustomization.yaml` 태그를 자동 커밋하고, Argo CD가 자동 동기화한다. 코드(pom.xml·package.json·pyproject.toml)가 없는 레포는 `detect` 잡이 검사를 건너뛴다. (model-runtime은 GPU PC compose라 이미지만 만든다.)
 - 정적 분석 규칙: `quality/` (parent POM이 같은 버전 태그의 파일을 읽는다)
 - 템플릿: `templates/ci.yml`, `templates/Dockerfile.java`
 - parent POM 배포: `parent-pom/`·`quality/` 변경이 main에 머지되면 `release.yml`이 pom 버전으로 태그 `vX.Y.Z`를 만들고 GitHub Packages에 배포한다. 같은 버전이 이미 있으면 건너뛴다.
-- 필요한 시크릿: 없음. 모든 워크플로가 기본 `GITHUB_TOKEN`만 쓴다. 공개 레포의 패키지는 공개라서 서비스 레포가 자기 `GITHUB_TOKEN`으로 parent POM을 읽는다.
+- 시크릿 `DEPLOY_REPO_TOKEN`(선택): fine-grained PAT, 대상 레포 `4cut-story/deploy`만, 권한은 Actions Read and write 하나. 배포 레포를 깨우기만 하고 커밋은 deploy 레포가 자기 `GITHUB_TOKEN`으로 한다. 없어도 배포는 10분 폴링으로 된다. 공개 레포의 패키지는 공개라서 서비스 레포가 자기 `GITHUB_TOKEN`으로 parent POM을 읽는다.
 
 ### crowfoot-auth CI에서 바꾼 점
 - **테스트를 CI에서 돌린다** (`-DskipTests` 제거): 테스트는 머지 조건이다 (constitution V).
 - **PR에서도 돈다**: 머지 전에 실패를 잡는다. 이미지와 배포는 main push일 때만.
-- **배포 태그는 deploy 레포가 가져간다(pull)**: crowfoot는 서비스 CI가 매니페스트 레포에 직접 커밋해 레포 간 쓰기 토큰(PAT)이 필요했다. 여기서는 deploy 레포가 공개 API로 성공한 빌드를 찾아 자기 `GITHUB_TOKEN`으로 커밋한다. 개인 토큰 만료·유출 걱정이 없고, 대신 반영까지 최대 10분 정도 걸린다.
+- **배포 태그는 deploy 레포가 가져간다(pull)**: crowfoot는 서비스 CI가 매니페스트 레포에 직접 커밋해 레포 간 쓰기 토큰(PAT)이 필요했다. 여기서는 deploy 레포가 공개 API로 성공한 빌드를 찾아 자기 `GITHUB_TOKEN`으로 커밋한다. 토큰이 있으면 이미지 푸시 직후 바로 반영되고, 토큰은 deploy 워크플로 실행 권한만 가지므로 유출돼도 매니페스트를 바꿀 수 없다. 토큰이 만료되면 폴링이 받쳐 준다.
 - **`latest` 태그를 쓰지 않는다**: 떠 있는 이미지가 어느 커밋인지 sha로만 식별한다. 롤백은 deploy 레포 커밋 되돌리기.
 - **재사용 워크플로 한 곳에서 관리**: 서비스마다 같은 단계를 복사하지 않는다.
 - **품질 검사를 parent POM에**: CI와 로컬 `mvn verify`가 같은 기준으로 돈다. 커버리지 80%, 스타일 검사를 더했다.
