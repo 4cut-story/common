@@ -18,9 +18,9 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.fourcut</groupId>
+    <groupId>net.java21.fourcut</groupId>
     <artifactId>fourcut-parent</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
     <name>4cut parent</name>
 
@@ -32,7 +32,7 @@
         <quality.failOnViolation>true</quality.failOnViolation>
         <jacoco.minLineCoverage>0.80</jacoco.minLineCoverage>
         <!-- 규칙 파일은 이 POM 버전과 같은 common 태그에서 읽는다 (규칙 변경이 기존 빌드를 깨지 않게) -->
-        <fourcut.common.version>0.1.0</fourcut.common.version>
+        <fourcut.common.version>0.2.0</fourcut.common.version>
         <quality.rulesBaseUrl>https://raw.githubusercontent.com/4cut-story/common/v${fourcut.common.version}/quality</quality.rulesBaseUrl>
 
         <!-- 플러그인 버전 -->

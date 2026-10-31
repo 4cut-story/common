@@ -1,5 +1,6 @@
 # 서비스 이름·포트·주소의 원본 (docs/architecture.md 13절)
 # compose, 매니페스트, 서비스 설정은 모두 이 이름과 포트를 쓴다.
+# Java 패키지는 net.java21.fourcut.<서비스> (Java 패키지는 숫자로 시작하거나 '-'를 쓸 수 없어 4cut 대신 fourcut).
 services:
   web:
     port: 3000
@@ -11,24 +12,28 @@ services:
     port: 8080
     location: cluster
     prod_url: http://api-gateway:8080
+    java_package: net.java21.fourcut.gateway   # groupId net.java21.fourcut, artifactId api-gateway
     local_url: http://localhost:8080
     config_key: SERVICES_GATEWAY_URL   # web 서버 전용
   auth-service:
     port: 8080
     location: cluster
     prod_url: http://auth-service:8080
+    java_package: net.java21.fourcut.auth   # groupId net.java21.fourcut, artifactId auth-service
     local_url: http://localhost:8081
     config_key: SERVICES_AUTH_URL
   conversation-service:
     port: 8080
     location: cluster
     prod_url: http://conversation-service:8080
+    java_package: net.java21.fourcut.conversation   # groupId net.java21.fourcut, artifactId conversation-service
     local_url: http://localhost:8082
     config_key: SERVICES_CONVERSATION_URL
   content-service:
     port: 8080
     location: cluster
     prod_url: http://content-service:8080
+    java_package: net.java21.fourcut.content   # groupId net.java21.fourcut, artifactId content-service
     local_url: http://localhost:8083
     config_key: SERVICES_CONTENT_URL
   model-runtime:
