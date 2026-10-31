@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 4cut Spring 서비스 공통 PMD 규칙. PMD quickstart를 기준으로 오탐이 잦은 규칙만 끈다. -->
+<ruleset name="4cut"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+    <description>4cut 공통 PMD 규칙</description>
+    <exclude-pattern>.*/generated-sources/.*</exclude-pattern>
+
+    <rule ref="rulesets/java/quickstart.xml">
+        <!-- SLF4J 자리표시자 로그는 가드가 필요 없다 -->
+        <exclude name="GuardLogStatement"/>
+        <!-- 연산 순서를 드러내는 괄호는 허용한다 -->
+        <exclude name="UselessParentheses"/>
+        <!-- record를 묶는 네임스페이스 클래스를 오탐한다 -->
+        <exclude name="MissingStaticMethodInNonInstantiatableClass"/>
+    </rule>
+
+    <!-- @SpringBootApplication 진입 클래스는 유틸리티 클래스가 아니다 -->
+    <rule ref="category/java/design.xml/UseUtilityClass">
+        <properties>
+            <property name="violationSuppressXPath"
+                      value="//ClassDeclaration[pmd-java:hasAnnotation('org.springframework.boot.autoconfigure.SpringBootApplication')]"/>
+        </properties>
+    </rule>
+</ruleset>

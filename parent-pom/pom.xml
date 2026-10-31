@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  4cut Spring 서비스 공통 parent POM.
+  - 품질 기준을 빌드에 건다: 하나라도 어기면 `mvn verify`가 실패한다.
+    SpotBugs + FindSecBugs, PMD, CPD(중복), Spotless(google-java-format), JaCoCo 라인 커버리지 80%, maven-enforcer
+  - 정적 분석 규칙 원본: common/quality/ (이 POM 버전과 같은 common 태그 vX.Y.Z에서 읽는다)
+  - Spring AI, Spring Modulith 등 서비스별 BOM은 서비스 POM의 dependencyManagement에 둔다 (docs/versions.md 확인 후 고정).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.fourcut</groupId>
+    <artifactId>fourcut-parent</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+    <name>4cut parent</name>
+
+    <properties>
+        <java.version>21</java.version>
+        <spring-cloud.version>2025.1.2</spring-cloud.version>
+
+        <!-- 품질 기준 -->
+        <quality.failOnViolation>true</quality.failOnViolation>
+        <jacoco.minLineCoverage>0.80</jacoco.minLineCoverage>
+        <!-- 규칙 파일은 이 POM 버전과 같은 common 태그에서 읽는다 (규칙 변경이 기존 빌드를 깨지 않게) -->
+        <fourcut.common.version>0.1.0</fourcut.common.version>
+        <quality.rulesBaseUrl>https://raw.githubusercontent.com/4cut-story/common/v${fourcut.common.version}/quality</quality.rulesBaseUrl>
+
+        <!-- 플러그인 버전 -->
+        <spotbugs-plugin.version>4.9.3.0</spotbugs-plugin.version>
+        <findsecbugs.version>1.14.0</findsecbugs.version>
+        <pmd-plugin.version>3.28.0</pmd-plugin.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <spotless.version>2.44.4</spotless.version>
+        <enforcer.version>3.5.0</enforcer.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-plugin.version}</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Medium</threshold>
+                        <excludeFilterFile>${quality.rulesBaseUrl}/spotbugs-exclude.xml</excludeFilterFile>
+                        <failOnError>${quality.failOnViolation}</failOnError>
+                        <plugins>
+                            <plugin>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>${findsecbugs.version}</version>
+                            </plugin>
+                        </plugins>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${pmd-plugin.version}</version>
+                    <configuration>
+                        <rulesets>
+                            <ruleset>${quality.rulesBaseUrl}/pmd-ruleset.xml</ruleset>
+                        </rulesets>
+                        <targetJdk>${java.version}</targetJdk>
+                        <printFailingErrors>true</printFailingErrors>
+                        <failOnViolation>${quality.failOnViolation}</failOnViolation>
+                        <minimumTokens>100</minimumTokens>
+                        <excludeRoots>
+                            <excludeRoot>target/generated-sources</excludeRoot>
+                        </excludeRoots>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- 빌드 환경 규칙 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${enforcer.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion><version>[21,)</version></requireJavaVersion>
+                                <requireMavenVersion><version>[3.9,)</version></requireMavenVersion>
+                                <dependencyConvergence/>
+                                <banDuplicatePomDependencyVersions/>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 코드 스타일: 어긋나면 verify 실패. 로컬에서 `mvn spotless:apply`로 고친다. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat/>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals><goal>check</goal></goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 정적 분석: verify 단계에서 실행 -->
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals><goal>check</goal></goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                            <goal>cpd-check</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 커버리지: 라인 80% 미만이면 verify 실패 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>prepare-agent-it</id>
+                        <goals><goal>prepare-agent-integration</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${jacoco.minLineCoverage}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <excludes>
+                                <exclude>**/*Application.class</exclude>
+                                <exclude>**/config/**</exclude>
+                                <exclude>**/generated/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/4cut-story/common</url>
+        </repository>
+    </distributionManagement>
+</project>
