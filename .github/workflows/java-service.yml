@@ -47,6 +47,10 @@ jobs:
     permissions:
       contents: read
       packages: read
+    # setup-java가 만드는 settings.xml의 server 'github'는 env GITHUB_TOKEN을 비밀번호로 읽는다.
+    # GitHub Packages(Maven)는 공개 패키지도 인증이 필요하므로 parent POM을 받으려면 꼭 넘긴다.
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
