@@ -14,18 +14,32 @@ on:
       app-name:
         type: string
         required: true
-      deploy:
-        type: boolean
-        default: true
-    secrets:
-      DEPLOY_REPO_TOKEN:
-        required: false
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/${{ inputs.app-name }}
 
 jobs:
+  # 코드가 아직 없는 레포(스펙 단계)나 Dockerfile만 바뀐 경우에는 검사를 건너뛴다.
+  detect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f package.json ] && [ -f package-lock.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::package.json 또는 package-lock.json 없음. 코드가 생기기 전이라 검사를 건너뜀"
+          fi
+
   verify:
+    needs: detect
+    if: needs.detect.outputs.ready == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,12 +82,3 @@ jobs:
           context: .
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}
-
-  deploy-tag:
-    needs: image
-    if: inputs.deploy && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    uses: 4cut-story/common/.github/workflows/deploy-tag.yml@main
-    with:
-      app-name: ${{ inputs.app-name }}
-    secrets:
-      DEPLOY_REPO_TOKEN: ${{ secrets.DEPLOY_REPO_TOKEN }}
