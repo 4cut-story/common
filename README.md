@@ -14,6 +14,31 @@
 
 설계와 스펙은 [docs](https://github.com/4cut-story/docs)에 있습니다.
 
+## Spring 서비스 시작 규칙
+
+- groupId `net.java21.fourcut`, artifactId = 레포 이름, 패키지 `net.java21.fourcut.<서비스>` (`common/service-catalog.yaml`의 `java_package`)
+  - api-gateway `net.java21.fourcut.gateway`, auth-service `net.java21.fourcut.auth`, conversation-service `net.java21.fourcut.conversation`, content-service `net.java21.fourcut.content`
+  - Java 패키지는 숫자로 시작하거나 `-`를 쓸 수 없어서 `4cut` 대신 `fourcut`을 쓴다.
+- pom.xml
+
+```xml
+<parent>
+  <groupId>net.java21.fourcut</groupId>
+  <artifactId>fourcut-parent</artifactId>
+  <version>0.2.0</version>
+  <relativePath/>
+</parent>
+<groupId>net.java21.fourcut</groupId>
+<artifactId>auth-service</artifactId>
+
+<repositories>
+  <repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/4cut-story/common</url>
+  </repository>
+</repositories>
+```
+
 ## CI와 품질 기준
 
 모든 서비스는 SonarQube 없이 빌드 도구만으로 품질을 검사하고, 하나라도 어기면 CI가 실패한다. **테스트 커버리지는 모든 서비스 80% 이상.**
