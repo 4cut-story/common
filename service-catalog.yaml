@@ -1,0 +1,58 @@
+# 서비스 이름·포트·주소의 원본 (docs/architecture.md 13절)
+# compose, 매니페스트, 서비스 설정은 모두 이 이름과 포트를 쓴다.
+services:
+  web:
+    port: 3000
+    location: cluster
+    exposure: ingress
+    prod_url: http://web:3000
+    local_url: http://localhost:3000
+  api-gateway:
+    port: 8080
+    location: cluster
+    prod_url: http://api-gateway:8080
+    local_url: http://localhost:8080
+    config_key: SERVICES_GATEWAY_URL   # web 서버 전용
+  auth-service:
+    port: 8080
+    location: cluster
+    prod_url: http://auth-service:8080
+    local_url: http://localhost:8081
+    config_key: SERVICES_AUTH_URL
+  conversation-service:
+    port: 8080
+    location: cluster
+    prod_url: http://conversation-service:8080
+    local_url: http://localhost:8082
+    config_key: SERVICES_CONVERSATION_URL
+  content-service:
+    port: 8080
+    location: cluster
+    prod_url: http://content-service:8080
+    local_url: http://localhost:8083
+    config_key: SERVICES_CONTENT_URL
+  model-runtime:
+    port: 8001
+    location: gpu-pc
+    prod_url: http://model-runtime:8001   # Service + 수동 Endpoints → GPU PC 고정 IP
+    local_url: http://localhost:8001      # 또는 가짜 런타임
+    config_key: SERVICES_MODEL_RUNTIME_URL
+  ollama:
+    port: 11434
+    location: gpu-pc
+    prod_url: http://ollama:11434
+    local_url: http://localhost:11434     # 또는 가짜
+    config_key: SERVICES_OLLAMA_URL       # Spring AI base-url
+  postgresql:
+    port: 5432
+    location: existing-infra
+    config_key: DB_URL                    # + 서비스별 계정, 접속 정보는 착수 시 제공
+  minio:
+    port: 9000
+    location: existing-infra
+    config_key: MINIO_ENDPOINT            # + 서비스별 키
+  redis:
+    port: 6379
+    location: existing-infra
+    phase: 2
+    config_key: REDIS_URL
