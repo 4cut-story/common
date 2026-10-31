@@ -46,7 +46,8 @@ services:
   postgresql:
     port: 5432
     location: existing-infra
-    config_key: DB_URL                    # + 서비스별 계정, 접속 정보는 착수 시 제공
+    config_key: DB_URL                    # 실제 값은 local .env / prod Secret에만 둔다
+    config_keys: [DB_URL, DB_USERNAME, DB_PASSWORD, DB_SCHEMA]
   minio:
     port: 9000
     location: existing-infra
