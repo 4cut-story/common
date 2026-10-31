@@ -246,6 +246,12 @@
                     <artifactId>spring-restdocs-mockmvc</artifactId>
                     <scope>test</scope>
                 </dependency>
+                <!-- @AutoConfigureRestDocs (Boot 4에서 별도 모듈) -->
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-restdocs</artifactId>
+                    <scope>test</scope>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
