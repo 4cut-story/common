@@ -4,6 +4,8 @@
   - 품질 기준을 빌드에 건다: 하나라도 어기면 `mvn verify`가 실패한다.
     SpotBugs + FindSecBugs, PMD, CPD(중복), Spotless(google-java-format), JaCoCo 라인 커버리지 80%, maven-enforcer
   - 정적 분석 규칙 원본: common/quality/ (이 POM 버전과 같은 common 태그 vX.Y.Z에서 읽는다)
+  - API 문서: Spring REST Docs. 서비스에 src/docs/asciidoc/index.adoc이 있으면 restdocs 프로필이 켜져
+    테스트가 만든 스니펫(target/generated-snippets)으로 HTML을 만들고 jar의 /docs/index.html로 넣는다.
   - Spring AI, Spring Modulith 등 서비스별 BOM은 서비스 POM의 dependencyManagement에 둔다 (docs/versions.md 확인 후 고정).
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -20,7 +22,7 @@
 
     <groupId>net.java21.fourcut</groupId>
     <artifactId>fourcut-parent</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <packaging>pom</packaging>
     <name>4cut parent</name>
 
@@ -32,7 +34,7 @@
         <quality.failOnViolation>true</quality.failOnViolation>
         <jacoco.minLineCoverage>0.80</jacoco.minLineCoverage>
         <!-- 규칙 파일은 이 POM 버전과 같은 common 태그에서 읽는다 (규칙 변경이 기존 빌드를 깨지 않게) -->
-        <fourcut.common.version>0.2.0</fourcut.common.version>
+        <fourcut.common.version>0.3.0</fourcut.common.version>
         <quality.rulesBaseUrl>https://raw.githubusercontent.com/4cut-story/common/v${fourcut.common.version}/quality</quality.rulesBaseUrl>
 
         <!-- 플러그인 버전 -->
@@ -42,6 +44,7 @@
         <jacoco.version>0.8.13</jacoco.version>
         <spotless.version>2.44.4</spotless.version>
         <enforcer.version>3.5.0</enforcer.version>
+        <asciidoctor-plugin.version>3.2.0</asciidoctor-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -223,6 +226,88 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          API 문서 (Spring REST Docs). src/docs/asciidoc/index.adoc이 있는 서비스에서만 켜진다.
+          테스트(MockMvc + REST Docs)가 target/generated-snippets에 스니펫을 만들고,
+          prepare-package에서 Asciidoctor가 HTML로 만든 뒤 jar의 static/docs로 복사한다 → 서비스의 /docs/index.html
+        -->
+        <profile>
+            <id>restdocs</id>
+            <activation>
+                <file>
+                    <exists>${basedir}/src/docs/asciidoc/index.adoc</exists>
+                </file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.restdocs</groupId>
+                    <artifactId>spring-restdocs-mockmvc</artifactId>
+                    <scope>test</scope>
+                </dependency>
+                <!-- @AutoConfigureRestDocs (Boot 4에서 별도 모듈) -->
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-restdocs</artifactId>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.asciidoctor</groupId>
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                        <version>${asciidoctor-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-docs</id>
+                                <phase>prepare-package</phase>
+                                <goals><goal>process-asciidoc</goal></goals>
+                                <configuration>
+                                    <backend>html5</backend>
+                                    <doctype>book</doctype>
+                                    <attributes>
+                                        <snippets>${project.build.directory}/generated-snippets</snippets>
+                                        <toc>left</toc>
+                                        <toclevels>2</toclevels>
+                                        <sectanchors>true</sectanchors>
+                                        <source-highlighter>coderay</source-highlighter>
+                                    </attributes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.springframework.restdocs</groupId>
+                                <artifactId>spring-restdocs-asciidoctor</artifactId>
+                                <version>${spring-restdocs.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-docs</id>
+                                <phase>prepare-package</phase>
+                                <goals><goal>copy-resources</goal></goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}/static/docs</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/generated-docs</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <distributionManagement>
         <repository>

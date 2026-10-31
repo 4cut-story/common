@@ -25,7 +25,7 @@
 <parent>
   <groupId>net.java21.fourcut</groupId>
   <artifactId>fourcut-parent</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <relativePath/>
 </parent>
 <groupId>net.java21.fourcut</groupId>
@@ -38,6 +38,13 @@
   </repository>
 </repositories>
 ```
+
+## API 문서 (Spring REST Docs)
+
+parent `0.3.0`부터 서비스에 `src/docs/asciidoc/index.adoc`이 있으면 `restdocs` 프로필이 자동으로 켜진다.
+- 컨트롤러 테스트(`@WebMvcTest` + `@AutoConfigureRestDocs`)가 `target/generated-snippets`에 스니펫을 만든다. 테스트를 통과한 API만 문서에 들어간다.
+- `prepare-package`에서 Asciidoctor가 HTML(`target/generated-docs`)을 만들고 jar의 `static/docs`로 넣는다. 서비스의 `/docs/index.html`에서 본다.
+- CI는 같은 HTML을 `api-docs` 아티팩트로 올린다.
 
 ## CI와 품질 기준
 
