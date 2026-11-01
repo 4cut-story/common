@@ -25,7 +25,7 @@
 <parent>
   <groupId>net.java21.fourcut</groupId>
   <artifactId>fourcut-parent</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
   <relativePath/>
 </parent>
 <groupId>net.java21.fourcut</groupId>
