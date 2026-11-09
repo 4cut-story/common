@@ -120,6 +120,18 @@ components:
           enum: [none, push_in, pull_out, pan_left, pan_right]
           default: none
           description: 컷을 보여 주는 동안 그림을 천천히 확대·이동하는 방향. 움직임 줄이기 설정이면 none으로 본다.
+        ambient:
+          type: array
+          maxItems: 2
+          uniqueItems: true
+          default: []
+          description: >
+            그림 위에 화면이 얹는 작은 움직임 층(GPU 그림 없음). 그 컷 배경에 보이는 것만 담긴다.
+            twinkle 별빛 반짝임, rain 빗줄기, snow 눈, fireflies 반딧불이, petals 꽃잎, leaves 낙엽,
+            steam 김, dust 햇빛 속 먼지, flicker 불빛 흔들림. 움직임 줄이기 설정이면 그리지 않는다. 없으면 빈 배열이거나 필드가 없다.
+          items:
+            type: string
+            enum: [twinkle, rain, snow, fireflies, petals, leaves, steam, dust, flicker]
     Caption:
       type: object
       required: [text, startMs, endMs]
