@@ -69,7 +69,8 @@ components:
     Frame:
       name: frame
       in: query
-      schema: { type: string, enum: [a, b, c], default: a }
+      schema: { type: string, enum: [a, b, c, depth], default: a }
+      description: depth는 그 컷의 깊이 지도(LivePanel.depth)
   schemas:
     LivePlayback:
       type: object
@@ -133,6 +134,14 @@ components:
           items:
             type: string
             enum: [twinkle, rain, snow, fireflies, petals, leaves, steam, dust, flicker, meteor, fireworks, lightning, glow]
+        depth:
+          oneOf:
+            - $ref: '#/components/schemas/DepthImage'
+            - type: 'null'
+          description: >
+            넓은 그림(16:9) 컷의 깊이 지도(같은 크기 흑백, 밝을수록 가깝다). 화면은 이것으로 가까운 것과 먼 것을 다른 속도로
+            움직여 입체로 보여 준다(2.5D 패럴랙스). motion frames도 같은 깊이 지도를 쓴다. 없거나 null이면 평면으로 움직인다.
+            움직임 줄이기 설정이면 쓰지 않는다.
     Caption:
       type: object
       required: [text, startMs, endMs]
@@ -145,6 +154,10 @@ components:
       type: string
       pattern: '^panels/([1-9]|10)(-[bc])?\.png$'
       description: 만화 폴더 기준 상대 경로. 화면은 panel 번호와 frame(a, b)으로 이미지 경로를 부른다.
+    DepthImage:
+      type: string
+      pattern: '^panels/([1-9]|10)-depth\.png$'
+      description: 만화 폴더 기준 깊이 지도 경로. 화면은 panel 번호와 frame=depth로 부른다.
     PanelSound:
       type: object
       required: [publicId, title, volume, fadeMs, loop]
