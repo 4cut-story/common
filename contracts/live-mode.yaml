@@ -98,6 +98,11 @@ components:
           oneOf:
             - $ref: '#/components/schemas/PanelMotion'
             - type: 'null'
+        effect:
+          description: 그 컷에서 일어나는 사건 소리(알람, 초인종, 전화벨…). 컷이 시작될 때 배경음 위에 한 번 튼다(loop false). 없으면 null이거나 필드가 없다.
+          oneOf:
+            - $ref: '#/components/schemas/PanelSound'
+            - type: 'null'
     PanelImage:
       type: string
       pattern: '^panels/([1-9]|10)(-b)?\.png$'
