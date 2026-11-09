@@ -128,10 +128,11 @@ components:
           description: >
             그림 위에 화면이 얹는 작은 움직임 층(GPU 그림 없음). 그 컷 배경에 보이는 것만 담긴다.
             twinkle 별빛 반짝임, rain 빗줄기, snow 눈, fireflies 반딧불이, petals 꽃잎, leaves 낙엽,
-            steam 김, dust 햇빛 속 먼지, flicker 불빛 흔들림. 움직임 줄이기 설정이면 그리지 않는다. 없으면 빈 배열이거나 필드가 없다.
+            steam 김, dust 햇빛 속 먼지, flicker 불빛 흔들림, meteor 별똥별, fireworks 불꽃놀이, lightning 번개,
+            glow 은은한 빛 알갱이(다른 효과가 없는 컷). 모르는 값은 무시한다. 움직임 줄이기 설정이면 그리지 않는다. 없으면 빈 배열이거나 필드가 없다.
           items:
             type: string
-            enum: [twinkle, rain, snow, fireflies, petals, leaves, steam, dust, flicker]
+            enum: [twinkle, rain, snow, fireflies, petals, leaves, steam, dust, flicker, meteor, fireworks, lightning, glow]
     Caption:
       type: object
       required: [text, startMs, endMs]
