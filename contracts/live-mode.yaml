@@ -69,7 +69,7 @@ components:
     Frame:
       name: frame
       in: query
-      schema: { type: string, enum: [a, b, c, depth], default: a }
+      schema: { type: string, enum: [a, b, c, d, depth], default: a }
       description: depth는 그 컷의 깊이 지도(LivePanel.depth)
   schemas:
     LivePlayback:
@@ -152,7 +152,7 @@ components:
         endMs: { type: integer, minimum: 0, maximum: 20000 }
     PanelImage:
       type: string
-      pattern: '^panels/([1-9]|10)(-[bc])?\.png$'
+      pattern: '^panels/([1-9]|10)(-[bcd])?\.png$'
       description: 만화 폴더 기준 상대 경로. 화면은 panel 번호와 frame(a, b)으로 이미지 경로를 부른다.
     DepthImage:
       type: string
@@ -181,12 +181,15 @@ components:
       type: object
       required: [type, frames, intervalMs]
       properties:
-        type: { type: string, enum: [twinkle, rain, snow, flicker, shimmer, petals] }
+        type:
+          type: string
+          enum: [twinkle, rain, snow, flicker, shimmer, petals, breeze]
+          description: breeze는 맞는 움직임이 없는 넓은 그림 컷에 쓰는 가벼운 바람·빛 변화다.
         frames:
           type: array
           minItems: 2
-          maxItems: 3
-          description: 차례로 겹쳐 바꿔 보여 줄 그림. 세 장이면 a→b→c→b 순서로 되돌아온다(세 번째 그림은 같은 바탕에서 다르게 바꾼 그림).
+          maxItems: 4
+          description: 차례로 겹쳐 바꿔 보여 줄 그림. 세 장 이상이면 끝까지 갔다가 되돌아온다(a→b→c→b, a→b→c→d→c→b). 두 번째부터는 같은 바탕에서 배경만 다르게 바꾼 그림이고 앞쪽 인물은 첫 그림 그대로다.
           items: { $ref: '#/components/schemas/PanelImage' }
         intervalMs: { type: integer, minimum: 100, maximum: 5000 }
         easing: { type: string, default: ease-in-out }
