@@ -69,7 +69,7 @@ components:
     Frame:
       name: frame
       in: query
-      schema: { type: string, enum: [a, b], default: a }
+      schema: { type: string, enum: [a, b, c], default: a }
   schemas:
     LivePlayback:
       type: object
@@ -142,7 +142,7 @@ components:
         endMs: { type: integer, minimum: 0, maximum: 20000 }
     PanelImage:
       type: string
-      pattern: '^panels/([1-9]|10)(-b)?\.png$'
+      pattern: '^panels/([1-9]|10)(-[bc])?\.png$'
       description: 만화 폴더 기준 상대 경로. 화면은 panel 번호와 frame(a, b)으로 이미지 경로를 부른다.
     PanelSound:
       type: object
@@ -171,7 +171,8 @@ components:
         frames:
           type: array
           minItems: 2
-          maxItems: 2
+          maxItems: 3
+          description: 차례로 겹쳐 바꿔 보여 줄 그림. 세 장이면 a→b→c→b 순서로 되돌아온다(세 번째 그림은 같은 바탕에서 다르게 바꾼 그림).
           items: { $ref: '#/components/schemas/PanelImage' }
         intervalMs: { type: integer, minimum: 100, maximum: 5000 }
         easing: { type: string, default: ease-in-out }
