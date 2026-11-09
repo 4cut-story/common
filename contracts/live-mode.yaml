@@ -103,6 +103,31 @@ components:
           oneOf:
             - $ref: '#/components/schemas/PanelSound'
             - type: 'null'
+        aspect:
+          type: string
+          enum: ['1:1', '16:9']
+          default: '1:1'
+          description: >
+            image(와 motion frames)의 비율. 16:9는 라이브 전용 넓은 그림(말풍선·글자 없음)이라 화면이 captions를 자막으로 보여 준다.
+            1:1은 말풍선이 들어간 컷 그림이라 자막을 보여 주지 않는다. 없으면 1:1.
+        captions:
+          type: array
+          maxItems: 12
+          description: 컷 안 대사 자막. aspect가 16:9일 때만 쓴다. 시작 시간 순서.
+          items: { $ref: '#/components/schemas/Caption' }
+        camera:
+          type: string
+          enum: [none, push_in, pull_out, pan_left, pan_right]
+          default: none
+          description: 컷을 보여 주는 동안 그림을 천천히 확대·이동하는 방향. 움직임 줄이기 설정이면 none으로 본다.
+    Caption:
+      type: object
+      required: [text, startMs, endMs]
+      properties:
+        speaker: { type: [string, 'null'], description: 말한 사람 이름. 해설이면 null }
+        text: { type: string, maxLength: 200 }
+        startMs: { type: integer, minimum: 0, maximum: 20000, description: 컷 시작부터 }
+        endMs: { type: integer, minimum: 0, maximum: 20000 }
     PanelImage:
       type: string
       pattern: '^panels/([1-9]|10)(-b)?\.png$'
