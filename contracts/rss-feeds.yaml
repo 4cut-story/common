@@ -1,0 +1,136 @@
+# RSS 구독 계약 (docs 레포 specs/004-rss-subscription). 피드 등록·관리 API와 만화 등록의 autoPublish.
+openapi: 3.1.0
+info:
+  title: 4cut rss feeds
+  version: 0.1.0
+  description: >
+    사용자가 RSS 2.0·Atom 피드를 등록하면 conversation-service가 30분마다 확인해 새 기사로 만화를 만든다.
+    바로 공개 피드의 만화는 COMPOSE 단계가 content-service 만화 등록(POST /internal/comics)에 autoPublish=true를 보내고,
+    content-service가 새로 만든 만화를 전체 공개 게시물로 올린다. 경로 접두어 /api/v1/rss-feeds는 conversation-service로 간다.
+paths:
+  /api/v1/rss-feeds:
+    get:
+      summary: 내 구독 목록 (최근 등록 순)
+      responses:
+        '200':
+          description: 구독 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/RssFeed' } }
+    post:
+      summary: 피드 등록. 서버가 피드를 읽어 제목을 채운다
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRssFeed' }
+      responses:
+        '201':
+          description: 등록한 구독
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RssFeed' }
+        '400': { description: 'RSS_UNREADABLE (피드가 아니거나 열 수 없는 주소, 내부망 주소) 또는 VALIDATION_FAILED' }
+        '409': { description: RSS_DUPLICATE (이미 등록한 주소) }
+  /api/v1/rss-feeds/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      summary: 구독 설정 바꾸기 (전체 교체)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRssFeed' }
+      responses:
+        '200':
+          description: 바꾼 구독
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RssFeed' }
+        '404': { description: 없거나 남의 구독 }
+    delete:
+      summary: 구독 지우기. 기사 기록도 지우고, 만든 만화는 남긴다
+      responses:
+        '204': { description: 지웠다 (없어도 204) }
+  /api/v1/rss-feeds/{id}/check:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      summary: 지금 확인. 뒤에서 확인하고 바로 돌아온다
+      responses:
+        '202':
+          description: 확인을 시작했다
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RssFeed' }
+        '404': { description: 없거나 남의 구독 }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: './schemas/common.yaml#/components/schemas/PublicId' }
+  schemas:
+    Concept:
+      type: string
+      enum: [AUTO, DAILY, ANIMALS, WATERCOLOR, PICTURE_BOOK, NEWSPAPER, JOSEON, WUXIA]
+    Dialect:
+      type: string
+      enum: [NONE, GYEONGSANG, JEOLLA, CHUNGCHEONG, GANGWON, SEOUL]
+    CreateRssFeed:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string, maxLength: 2048, description: http·https 피드 주소 }
+        autoPublish: { type: boolean, default: false, description: true면 완성되자마자 전체 공개 게시 }
+        concept: { $ref: '#/components/schemas/Concept' }
+        dialect: { $ref: '#/components/schemas/Dialect' }
+    UpdateRssFeed:
+      type: object
+      required: [autoPublish, enabled]
+      properties:
+        autoPublish: { type: boolean }
+        enabled: { type: boolean }
+        concept: { $ref: '#/components/schemas/Concept' }
+        dialect: { $ref: '#/components/schemas/Dialect' }
+    RssFeed:
+      type: object
+      required: [id, url, title, autoPublish, enabled, concept, dialect, made, createdAt, recent]
+      properties:
+        id: { $ref: './schemas/common.yaml#/components/schemas/PublicId' }
+        url: { type: string }
+        title: { type: string }
+        siteUrl: { type: [string, 'null'] }
+        autoPublish: { type: boolean }
+        enabled: { type: boolean }
+        concept: { $ref: '#/components/schemas/Concept' }
+        dialect: { $ref: '#/components/schemas/Dialect' }
+        lastCheckedAt: { type: [string, 'null'], format: date-time }
+        lastError: { type: [string, 'null'], description: 마지막 확인이 실패한 이유 }
+        made: { type: integer, description: 이 피드로 만든 만화(대화) 수 }
+        createdAt: { type: string, format: date-time }
+        recent:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/RssFeedItem' }
+    RssFeedItem:
+      type: object
+      required: [link, status, createdAt]
+      properties:
+        title: { type: [string, 'null'] }
+        link: { type: string }
+        status: { type: string, enum: [MADE, SKIPPED, FAILED] }
+        reason: { type: [string, 'null'], description: 실패 이유 }
+        conversationId: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+    RegisterComicAutoPublish:
+      description: content-service POST /internal/comics 본문에 더하는 선택 필드
+      type: object
+      properties:
+        autoPublish: { type: boolean, description: true이고 새로 만든 만화면 캡션이 제목인 PUBLIC 게시물을 만든다 }
