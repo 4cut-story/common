@@ -117,11 +117,13 @@ components:
           default: '1:1'
           description: >
             image(와 motion frames)의 비율. 16:9는 라이브 전용 넓은 그림(말풍선·글자 없음)이라 화면이 captions를 자막으로 보여 준다.
-            1:1은 말풍선이 들어간 컷 그림이라 자막을 보여 주지 않는다. 없으면 1:1.
+            1:1은 말풍선이 들어간 컷 그림이라 자막을 보여 주지 않는다(captions의 음성만 튼다). 없으면 1:1.
         captions:
           type: array
           maxItems: 12
-          description: 컷 안 대사 자막. aspect가 16:9일 때만 쓴다. 시작 시간 순서.
+          description: >-
+            컷 안 대사 자막. 시작 시간 순서. 16:9이면 화면이 자막으로 보여 준다. 1:1은 말풍선이 그림에 있어 글자는 보여 주지 않고,
+            voice가 있는 자막만 startMs에 그 음성을 튼다(대사 음성이 있는 1:1 컷만 captions를 둔다).
           items: { $ref: '#/components/schemas/Caption' }
         camera:
           type: string
