@@ -12,6 +12,7 @@
 | `schemas/common.yaml` | 공통 오류 형식, 커서 페이지, 공통 헤더·파라미터·오류 응답 | 002 T012 ✅ |
 | `live-mode.yaml` | 라이브 모드 재생 정보(LivePlayback), 라이브 조회·컷 그림 API | 003 T001 ✅ |
 | `rss-feeds.yaml` | RSS 구독 등록·관리 API, 만화 등록 autoPublish | 004 T001 ✅ |
+| `view-count.yaml` | 만화별 조회수: 조회 기록 API(방문자 쿠키 기준 10분 중복 제거), 게시물 viewCount | ✅ |
 | `gateway-routes.md` | 게이트웨이 라우트 표 | 002 T013 |
 
 모든 계약은 `docs` 레포의 [API 공통 규칙](https://github.com/4cut-story/docs/blob/main/docs/api-conventions.md)을 따르고, 오류·페이지·헤더는 `schemas/common.yaml`을 `$ref`로 가져다 쓴다. 공용 DTO는 손으로 쓰지 않고 이 계약에서 생성한다.
