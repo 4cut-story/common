@@ -34,7 +34,8 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/RssFeed' }
-        '400': { description: 'RSS_UNREADABLE (피드가 아니거나 열 수 없는 주소, 내부망 주소) 또는 VALIDATION_FAILED' }
+        '400': { description: VALIDATION_FAILED (주소가 비었거나 너무 김) }
+        '422': { description: 'RSS_UNREADABLE (피드가 아니거나 열 수 없는 주소, 내부망 주소)' }
         '409': { description: RSS_DUPLICATE (이미 등록한 주소) }
   /api/v1/rss-feeds/{id}:
     parameters:
@@ -125,7 +126,7 @@ components:
       properties:
         title: { type: [string, 'null'] }
         link: { type: string }
-        status: { type: string, enum: [MADE, SKIPPED, FAILED] }
+        status: { type: string, enum: [MADE, SKIPPED, SIMILAR, FAILED], description: 'SKIPPED: 처음 등록 때 옛 기사, SIMILAR: 최근 3일 안에 만든 기사와 주제가 비슷함' }
         reason: { type: [string, 'null'], description: 실패 이유 }
         conversationId: { type: [string, 'null'] }
         createdAt: { type: string, format: date-time }
