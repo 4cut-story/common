@@ -41,9 +41,10 @@ paths:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/Panel'
         - $ref: '#/components/parameters/Frame'
+        - $ref: '#/components/parameters/Voice'
       responses:
         '200': { description: '{url, expiresIn}' }
-        '400': { description: panel과 cast를 함께 줬거나 frame이 a, b가 아니다 }
+        '400': { description: panel과 cast를 함께 줬거나 frame이 a, b가 아니거나 voice를 frame과 함께 줬다 }
         '404': { description: 그 컷 그림이 재생 정보에 없다 }
   /api/v1/posts/{id}/image:
     get:
@@ -52,9 +53,10 @@ paths:
         - $ref: '#/components/parameters/Id'
         - $ref: '#/components/parameters/Panel'
         - $ref: '#/components/parameters/Frame'
+        - $ref: '#/components/parameters/Voice'
       responses:
         '200': { description: '{url, expiresIn}' }
-        '404': { description: 볼 수 없거나 그 컷 그림이 없다 }
+        '404': { description: 볼 수 없거나 그 컷 그림(또는 대사 음성)이 없다 }
 components:
   parameters:
     Id:
@@ -71,6 +73,11 @@ components:
       in: query
       schema: { type: string, enum: [a, b, c, d, depth], default: a }
       description: depth는 그 컷의 깊이 지도(LivePanel.depth)
+    Voice:
+      name: voice
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 9 }
+      description: panel과 함께 주면 그림 대신 그 컷 n번째 대사 음성(Caption.voice, MP3) 주소를 준다. frame과 함께 쓰지 않는다.
   schemas:
     LivePlayback:
       type: object
@@ -150,6 +157,22 @@ components:
         text: { type: string, maxLength: 200 }
         startMs: { type: integer, minimum: 0, maximum: 20000, description: 컷 시작부터 }
         endMs: { type: integer, minimum: 0, maximum: 20000 }
+        voice:
+          oneOf:
+            - $ref: '#/components/schemas/CaptionVoice'
+            - type: 'null'
+          description: >
+            그 대사를 인물 목소리로 읽은 음성. 화면은 자막이 나올 때(startMs) 틀고, 틀고 있는 동안 sound를 duckVolume으로 줄인다.
+            자막 시간(startMs~endMs)은 음성 길이에 맞춰져 있다. 없거나 null이면 소리 없이 자막만 보여 준다.
+    CaptionVoice:
+      type: object
+      required: [path, durationMs]
+      properties:
+        path:
+          type: string
+          pattern: '^voice/([1-9]|10)-[1-9]\.mp3$'
+          description: 만화 폴더 기준 상대 경로(voice/{컷}-{대사 순번}.mp3). 화면은 panel 번호와 voice(대사 순번)로 부른다.
+        durationMs: { type: integer, minimum: 1, maximum: 20000 }
     PanelImage:
       type: string
       pattern: '^panels/([1-9]|10)(-[bcd])?\.png$'
@@ -167,6 +190,11 @@ components:
         volume: { type: number, minimum: 0, maximum: 1 }
         fadeMs: { type: integer, minimum: 0, maximum: 5000 }
         loop: { type: boolean }
+        duckVolume:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: 대사 음성(Caption.voice)이 나오는 동안 줄여 둘 크기. 없으면 줄이지 않는다.
         score: { type: number, minimum: -1, maximum: 1, description: '소리 설명과 컷 질의의 유사도(1 - 코사인 거리). 글자 찾기로 고른 소리는 없다. 화면은 쓰지 않는다' }
         credit:
           type: object
