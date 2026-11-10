@@ -1,0 +1,50 @@
+# 만화별 조회수 계약. 게시물 상세를 연 방문자마다 세고, 같은 방문자가 10분 안에 다시 본 것은 세지 않는다.
+openapi: 3.1.0
+info:
+  title: 4cut view count
+  version: 0.1.0
+  description: >
+    web은 게시물 상세(/posts/{id})를 열면 POST /api/v1/posts/{id}/views를 한 번 부른다. 방문자는 web이 발급하는
+    방문자 쿠키(fourcut_vid, 1년, HttpOnly)로 구분하고, 게이트웨이에는 쿠키 값을 SHA-256 16진수로 바꾼 X-Viewer-Key만 넘긴다.
+    User-Agent가 봇·크롤러로 보이면 web이 부르지 않는다. 로그인하지 않아도 부를 수 있다(게이트웨이 익명 POST).
+    조회수는 게시물 응답(Post)의 viewCount로 피드·프로필·상세에 함께 실린다.
+paths:
+  /api/v1/posts/{id}/views:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: './schemas/common.yaml#/components/schemas/PublicId' }
+      - $ref: './schemas/common.yaml#/components/parameters/XUserId'
+      - $ref: '#/components/parameters/XViewerKey'
+    post:
+      summary: 게시물 조회 한 번 남기기
+      responses:
+        '200':
+          description: 지금 조회수와 이번 조회를 셌는지
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewCount' }
+        '400': { description: VALIDATION_FAILED (X-Viewer-Key가 없거나 형식이 틀림) }
+        '404': { description: 없거나 볼 수 없는 게시물 }
+components:
+  parameters:
+    XViewerKey:
+      name: X-Viewer-Key
+      in: header
+      required: true
+      description: 방문자 키. web이 방문자 쿠키를 SHA-256 16진수(64자)로 바꾼 값. 영문·숫자·_·- 16~64자.
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{16,64}$' }
+  schemas:
+    ViewCount:
+      type: object
+      required: [viewCount, counted]
+      properties:
+        viewCount: { type: integer, format: int64, minimum: 0, description: 지금 조회수 }
+        counted: { type: boolean, description: 이번 조회를 셌는지. 같은 방문자가 10분 안에 다시 봤으면 false }
+    PostViewCount:
+      description: 게시물 응답(Post)에 더해지는 필드
+      type: object
+      required: [viewCount]
+      properties:
+        viewCount: { type: integer, format: int64, minimum: 0, description: 조회수 }
