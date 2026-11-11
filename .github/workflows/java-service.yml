@@ -3,7 +3,7 @@
 #
 # 흐름: 코드 유무 확인(detect) → 정적 분석 → 테스트(verify) → [main push일 때만] 이미지 빌드·푸시(:sha)
 # deploy 레포 이미지 태그는 deploy 레포의 sync-images 워크플로가 가져간다. 서비스 레포에 쓰기 토큰이 필요 없다.
-# crowfoot-auth CI를 참고했고, 바꾼 점은 common/README.md "CI" 절에 적었다.
+# crowfoot-auth CI를 참고했고, 바꾼 점은 common/docs/build-and-ci.md "crowfoot-auth CI에서 바꾼 점" 절에 적었다.
 name: java-service
 
 on:
