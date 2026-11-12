@@ -83,7 +83,8 @@ components:
       enum: [AUTO, DAILY, ANIMALS, WATERCOLOR, PICTURE_BOOK, NEWSPAPER, JOSEON, WUXIA]
     Dialect:
       type: string
-      enum: [NONE, GYEONGSANG, JEOLLA, CHUNGCHEONG, GANGWON, SEOUL]
+      description: 대사 사투리. AUTO(등록 기본값)면 기사마다 골라 절반쯤 사투리를 섞고, 흑백 신문(NEWSPAPER) 그림체 구독은 표준어. NONE은 사투리 없음
+      enum: [AUTO, NONE, GYEONGSANG, JEOLLA, CHUNGCHEONG, GANGWON, SEOUL]
     CreateRssFeed:
       type: object
       required: [url]
