@@ -151,6 +151,24 @@ components:
             넓은 그림(16:9) 컷의 깊이 지도(같은 크기 흑백, 밝을수록 가깝다). 화면은 이것으로 가까운 것과 먼 것을 다른 속도로
             움직여 입체로 보여 준다(2.5D 패럴랙스). motion frames도 같은 깊이 지도를 쓴다. 없거나 null이면 평면으로 움직인다.
             움직임 줄이기 설정이면 쓰지 않는다.
+        people:
+          type: array
+          maxItems: 6
+          default: []
+          description: >
+            넓은 그림(16:9) 컷에 보이는 인물 얼굴 자리. 화면은 인물마다 숨쉬기·몸 흔들림을, 대사가 나오는 동안 자막 화자와
+            speaker가 같은 인물에게 고개 끄덕임을 그린다(그림을 더 그리지 않는다). 없거나 빈 배열이면 깊이 지도의 앞쪽이 함께 움직인다.
+            움직임 줄이기 설정이면 쓰지 않는다.
+          items:
+            $ref: '#/components/schemas/LivePerson'
+    LivePerson:
+      type: object
+      required: [x, y, size]
+      properties:
+        speaker: { type: [string, 'null'], description: 자막 화자와 같은 호칭. 누구인지 모르면 null }
+        x: { type: number, minimum: 0, maximum: 1, description: 얼굴 가운데 가로 위치(그림 폭 비율, 왼쪽 0) }
+        y: { type: number, minimum: 0, maximum: 1, description: 얼굴 가운데 세로 위치(그림 높이 비율, 위 0) }
+        size: { type: number, minimum: 0, maximum: 1, description: 얼굴 높이(그림 높이 비율) }
     Caption:
       type: object
       required: [text, startMs, endMs]
